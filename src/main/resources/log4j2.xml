@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration status="trace">
+	<Properties>
+		<Property name="baseDir">logs</Property>
+	</Properties>
+	<!--The first definition of all appender -->
+	<appenders>
+		<!--The output console configuration -->
+		<Console name="Console" target="SYSTEM_OUT">
+			<!--The console output only level and above the level of the information 
+				(onMatch), directly to the other(onMismatch) -->
+			<ThresholdFilter level="trace" onMatch="ACCEPT"
+				onMismatch="DENY" />
+			<!--This all know is the output log format -->
+			<PatternLayout
+				pattern="%t %d{HH:mm:ss.SSS} %-5level  %class{36} %L %M - %msg%xEx%n" />
+		</Console>
+		<!--Document will print out all the information, the log every time you 
+			run the program will automatically clear, determined by the append property, 
+			this is also very useful, suitable for temporary test -->
+		<File name="log" fileName="log/test.log" append="true">
+			<PatternLayout
+				pattern="%d{HH:mm:ss.SSS} %-5level  %class{36} %L %M - %msg%xEx%n" />
+		</File>
+
+		<!--This will print all the information, each size is more than size, then 
+			the size size of the log will automatically in the following year month was 
+			built according to the folder and file compression, as -->
+		<!-- <RollingFile name="RollingFile" fileName="logs/app.log" filePattern="log/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz" 
+			> <PatternLayout pattern="%d{yyyy-MM-dd 'at' HH:mm:ss z} %-5level %class{36} 
+			%L %M - %msg%xEx%n"/> <SizeBasedTriggeringPolicy size="50MB"/> </RollingFile> -->
+		<RollingFile name="RollingFile" fileName="${baseDir}/app.log"
+			filePattern="${baseDir}/$${date:yyyy-MM}/app-%d{yyyy-MM-dd-HH}-%i.log.gz">
+			<PatternLayout pattern="%d{yyyy-MM-dd 'at' HH:mm:ss z} %-5level %class{36} %L %M - %msg%xEx%n" />
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="250 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="100">
+				<!-- -->
+				<Delete basePath="${baseDir}" maxDepth="2">
+					<IfFileName glob="*/app-*.log.gz">
+						<IfLastModified age="30d">
+							<IfAny>
+								<IfAccumulatedFileSize exceeds="100 GB" />
+								<IfAccumulatedFileCount exceeds="10" />
+							</IfAny>
+						</IfLastModified>
+					</IfFileName>
+				</Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+
+
+		<JDBC name="databaseAppender" tableName="journaldev.logging">
+			<!-- <DataSource jndiName="java:/comp/env/jdbc/JournalDevDB" /> <BurstFilter 
+				level="TRACE" rate="20" maxBurst="2"/> -->
+			<ConnectionFactory class="com.journaldev.ConnectionFactory"
+				method="getDatabaseConnection" />
+			<Column name="EVENT_DATE" isEventTimestamp="true" />
+			<Column name="LEVEL" pattern="%level" />
+			<Column name="LOGGER" pattern="%logger" />
+			<Column name="MSG" pattern="%message" />
+			<Column name="THROWABLE" pattern="%ex{full}" />
+		</JDBC>
+	</appenders>
+	<!--Then the definition of logger, only the definition of logger and the 
+		introduction of the appender, the appender will take effect -->
+	<loggers>
+		<!--Create a default root logger -->
+		<root level="trace">
+			<appender-ref ref="RollingFile" />
+			<appender-ref ref="Console" />
+			<appender-ref ref="log" />
+			<!-- <appender-ref ref="databaseAppender" /> -->
+		</root>
+
+	</loggers>
+</configuration>
